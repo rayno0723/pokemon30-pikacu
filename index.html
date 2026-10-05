@@ -34,6 +34,7 @@
             border-radius: var(--border-radius);
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             margin-bottom: 24px;
+            position: relative;
         }
 
         h1 {
@@ -106,6 +107,7 @@
             opacity: 0.9;
         }
 
+        .btn-help { background-color: #607D8B; color: white; }
         .btn-toggle-qty { background-color: #9C27B0; color: white; }
         .btn-copy-image { background-color: #FF9800; color: white; }
         .btn-copy-text { background-color: #4CAF50; color: white; }
@@ -231,6 +233,106 @@
             background-color: #2196F3;
             color: white;
         }
+
+        /* 彈出說明視窗 (Modal) 樣式 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .modal-card {
+            background: #FFFFFF;
+            width: 100%;
+            max-width: 550px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            overflow: hidden;
+            animation: modalFadeIn 0.25s ease-out;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            background: #FFDE00;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            color: #333;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .modal-body h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.05rem;
+            border-bottom: 2px solid #FFDE00;
+            padding-bottom: 4px;
+        }
+
+        .help-list {
+            padding-left: 20px;
+            margin: 8px 0 16px 0;
+        }
+
+        .help-list li {
+            margin-bottom: 6px;
+        }
+
+        .tag-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .modal-footer {
+            padding: 12px 20px;
+            background: #F5F5F5;
+            text-align: right;
+            border-top: 1px solid #E0E0E0;
+        }
+
+        .btn-modal-close {
+            background-color: #3B4CCA;
+            color: white;
+            padding: 8px 20px;
+        }
     </style>
 </head>
 <body>
@@ -256,6 +358,7 @@
     <div class="share-panel">
         <div class="share-title">⚙️ 功能與分享選項</div>
         <div class="btn-group">
+            <button class="btn-help" onclick="openHelpModal()">📖 使用說明</button>
             <button class="btn-toggle-qty" onclick="toggleQtyMode()" id="btn-qty-toggle">🔢 開啟數量編輯模式</button>
             <button class="btn-copy-image" onclick="exportAsImage()">🖼 匯出圖片 (下載圖卡分享)</button>
             <button class="btn-copy-text" onclick="copyExchangeText()">📋 複製文字 (LINE/FB適用)</button>
@@ -266,13 +369,65 @@
     <div class="card-grid" id="card-grid"></div>
 </div>
 
+<!-- 彈出說明視窗 Modal -->
+<div class="modal-overlay" id="helpModal" onclick="closeHelpModalOnOverlay(event)">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span>📖 使用說明與功能介紹</span>
+            <button class="modal-close" onclick="closeHelpModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <h3>🎨 卡牌狀態說明</h3>
+            <ul class="help-list">
+                <li><span class="tag-badge" style="background:#9C27B0;">需求 X 張</span>：數量為<b>負數</b>（例如 -1），代表需要徵求該張卡牌。</li>
+                <li><span class="tag-badge" style="background:#E0E0E0; color:#666;">未收集</span>：數量為 <b>0</b>，代表尚未擁有。</li>
+                <li><span class="tag-badge" style="background:#4CAF50;">✓ 已收集</span>：數量為 <b>1</b>，自己留存收藏。</li>
+                <li><span class="tag-badge" style="background:#2196F3;">🔄 可交換</span>：數量為 <b>2 以上</b>，多出的卡牌可拿去交換。</li>
+            </ul>
+
+            <h3>👆 操作方式</h3>
+            <ul class="help-list">
+                <li><b>一般模式</b>：直接點擊卡牌格子，可快速進行「未收集 ➔ 已收集 ➔ 可交換」的循環切換。</li>
+                <li><b>數量編輯模式</b>：點擊「🔢 開啟數量編輯模式」按鈕後，可用 <b>+ / -</b> 按鈕精確調整張數，亦可點選成負數來表示需求張數。</li>
+            </ul>
+
+            <h3>📤 分享與交換</h3>
+            <ul class="help-list">
+                <li><b>🖼 匯出圖片</b>：自動將目前的卡牌進度繪製成一張畫質清晰的 PNG 圖卡並下載，方便貼至 LINE 或社群平台。</li>
+                <li><b>📋 複製文字</b>：產生格式化好的交換文字檔，自動整理出多出可換與缺少需求的號碼。</li>
+            </ul>
+
+            <p style="font-size: 0.85rem; color: #666; margin-bottom: 0; background: #FFF8E1; padding: 8px; border-radius: 6px;">
+                💡 <b>溫馨提示</b>：您的所有資料皆會自動儲存在個人瀏覽器中，重新整理或關閉網頁後紀錄也不會遺失！
+            </p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-modal-close" onclick="closeHelpModal()">我知道了！</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const TOTAL_CARDS = 30;
-    // 儲存每張卡牌的數量 (負數 = 需求, 0 = 未收集, 1 = 已收集, 2+ = 可交換)
     let cardQuantities = JSON.parse(localStorage.getItem('pikachu30th_quantities')) || Array(TOTAL_CARDS).fill(0);
     let isQtyMode = false;
 
     const gridElement = document.getElementById('card-grid');
+
+    // 彈出視窗控制
+    function openHelpModal() {
+        document.getElementById('helpModal').style.display = 'flex';
+    }
+
+    function closeHelpModal() {
+        document.getElementById('helpModal').style.display = 'none';
+    }
+
+    function closeHelpModalOnOverlay(e) {
+        if (e.target.id === 'helpModal') {
+            closeHelpModal();
+        }
+    }
 
     // 切換數量編輯模式
     function toggleQtyMode() {
@@ -290,7 +445,6 @@
             const index = i - 1;
             const qty = cardQuantities[index];
             
-            // 計算狀態分類
             let statusClass = 'status-0';
             if (qty < 0) statusClass = 'status-needed';
             else if (qty === 1) statusClass = 'status-1';
@@ -299,7 +453,6 @@
             const card = document.createElement('div');
             card.className = `card-item ${statusClass}`;
             
-            // 非數量模式時點擊進行 0 -> 1 -> 2 -> 0 循環切換
             card.onclick = (e) => {
                 if (e.target.tagName === 'BUTTON') return;
                 if (!isQtyMode) {
@@ -348,7 +501,7 @@
         updateStats();
     }
 
-    // 修改特定卡片數量（不設下限，允許點成負數）
+    // 修改卡片數量
     function changeQty(index, delta) {
         cardQuantities[index] += delta;
         saveAndRender();
@@ -364,7 +517,6 @@
     function updateStats() {
         const collectedCount = cardQuantities.filter(q => q > 0).length;
         const tradableCount = cardQuantities.filter(q => q >= 2).length;
-        // 計算所有負數的總需求張數
         const neededTotal = cardQuantities.filter(q => q < 0).reduce((sum, q) => sum + Math.abs(q), 0);
         const percentage = Math.round((collectedCount / TOTAL_CARDS) * 100);
 
@@ -375,7 +527,7 @@
         document.getElementById('progress-bar').style.width = `${percentage}%`;
     }
 
-    // 複製交換用純文字
+    // 複製交換文字
     function copyExchangeText() {
         const collected = [];
         const tradable = [];
@@ -409,7 +561,7 @@
         });
     }
 
-    // 匯出成圖片並自動下載
+    // 匯出圖卡
     function exportAsImage() {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -485,7 +637,6 @@
                 statusText = `🔄 剩 ${qty-1} 張可換`;
             }
 
-            // 繪製卡牌邊框與背景
             ctx.fillStyle = bgColor;
             ctx.strokeStyle = borderColor;
             ctx.lineWidth = 2;
@@ -494,25 +645,21 @@
             ctx.fill();
             ctx.stroke();
 
-            // 卡牌編號
             ctx.fillStyle = '#666666';
             ctx.font = '12px sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(`No.${String(i + 1).padStart(2, '0')}`, x + cardWidth / 2, y + 25);
 
-            // 狀態標籤背景
             ctx.fillStyle = tagBgColor;
             ctx.beginPath();
             ctx.roundRect(x + 10, y + 40, cardWidth - 20, 24, 12);
             ctx.fill();
 
-            // 狀態標籤文字
             ctx.fillStyle = tagTextColor;
             ctx.font = 'bold 11px sans-serif';
             ctx.fillText(statusText, x + cardWidth / 2, y + 56);
         }
 
-        // 下載 PNG 圖片
         const link = document.createElement('a');
         link.download = `皮卡丘30周年交換清單_已集${collectedCount}張.png`;
         link.href = canvas.toDataURL('image/png');
