@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>皮卡丘 30 周年卡牌清點與交換</title>
+    <style>
+        :root {
+            --primary-color: #FFDE00;
+            --accent-color: #3B4CCA;
+            --bg-color: #F8F9FA;
+            --card-bg: #FFFFFF;
+            --text-color: #212529;
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            background: linear-gradient(135deg, #FFDE00, #E6B800);
+            padding: 24px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 1.8rem;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 16px;
+            font-weight: bold;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: #E0E0E0;
+            border-radius: 10px;
+            height: 12px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #4CAF50;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .share-panel {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 24px;
+        }
+
+        .share-title {
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #333;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .btn-toggle-qty { background-color: #9C27B0; color: white; }
+        .btn-copy-image { background-color: #FF9800; color: white; }
+        .btn-copy-text { background-color: #4CAF50; color: white; }
+        .btn-reset { background-color: #FF5252; color: white; margin-left: auto; }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+            gap: 16px;
+        }
+
+        .card-item {
+            background: var(--card-bg);
+            border: 2px solid #E0E0E0;
+            border-radius: var(--border-radius);
+            padding: 14px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .card-number {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .card-title {
+            font-weight: bold;
+            font-size: 1.05rem;
+            margin-bottom: 8px;
+        }
+
+        .status-tag {
+            display: inline-block;
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            border-radius: 20px;
+            background-color: #E0E0E0;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        /* 數量控制器 */
+        .qty-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            margin-top: 6px;
+            width: 100%;
+        }
+
+        .btn-qty {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1px solid #ccc;
+            background: #fff;
+            color: #333;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-qty:hover {
+            background: #eee;
+        }
+
+        .qty-display {
+            font-size: 0.85rem;
+            font-weight: bold;
+            min-width: 32px;
+            color: #333;
+        }
+
+        /* 未收集 (0張) */
+        .card-item.status-0 {
+            border-color: #E0E0E0;
+            background-color: #FFFFFF;
+        }
+
+        /* 已收集 (1張 - 綠色) */
+        .card-item.status-1 {
+            border-color: #FFC107;
+            background-color: #FFFDE7;
+        }
+        .card-item.status-1 .status-tag {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        /* 可交換 (2張以上 - 藍色) */
+        .card-item.status-2 {
+            border-color: #2196F3;
+            background-color: #E3F2FD;
+        }
+        .card-item.status-2 .status-tag {
+            background-color: #2196F3;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>⚡ 皮卡丘 30 周年卡牌清點與交換</h1>
+        <p style="margin:0; color: #555;">點擊卡牌切換狀態，或開啟「數量模式」記錄持有張數</p>
+    </header>
+
+    <div class="stats-bar">
+        <div>已收集: <span id="collected-count" style="color: #4CAF50;">0</span> / 30</div>
+        <div>可交換: <span id="tradable-count" style="color: #2196F3;">0</span> 張</div>
+        <div>總持有: <span id="total-qty-count" style="color: #9C27B0;">0</span> 張</div>
+        <div>達成率: <span id="completion-rate">0%</span></div>
+    </div>
+    
+    <div class="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <!-- 分享與設定面板 -->
+    <div class="share-panel">
+        <div class="share-title">⚙️ 功能與分享選項</div>
+        <div class="btn-group">
+            <button class="btn-toggle-qty" onclick="toggleQtyMode()" id="btn-qty-toggle">🔢 開啟數量編輯模式</button>
+            <button class="btn-copy-image" onclick="exportAsImage()">🖼 匯出圖片 (下載圖卡分享)</button>
+            <button class="btn-copy-text" onclick="copyExchangeText()">📋 複製文字 (LINE/FB適用)</button>
+            <button class="btn-reset" onclick="resetCollection()">重置記錄</button>
+        </div>
+    </div>
+
+    <div class="card-grid" id="card-grid"></div>
+</div>
+
+<script>
+    const TOTAL_CARDS = 30;
+    // 儲存每張卡牌的數量 (數量 0 = 未收集, 1 = 已收集, 2+ = 可交換)
+    let cardQuantities = JSON.parse(localStorage.getItem('pikachu30th_quantities')) || Array(TOTAL_CARDS).fill(0);
+    let isQtyMode = false;
+
+    const gridElement = document.getElementById('card-grid');
+
+    // 切換數量編輯模式
+    function toggleQtyMode() {
+        isQtyMode = !isQtyMode;
+        const btn = document.getElementById('btn-qty-toggle');
+        btn.innerText = isQtyMode ? '✖ 關閉數量編輯模式' : '🔢 開啟數量編輯模式';
+        btn.style.backgroundColor = isQtyMode ? '#607D8B' : '#9C27B0';
+        initCards();
+    }
+
+    // 初始化卡片清單
+    function initCards() {
+        gridElement.innerHTML = '';
+        for (let i = 1; i <= TOTAL_CARDS; i++) {
+            const index = i - 1;
+            const qty = cardQuantities[index];
+            
+            // 計算狀態分類: 0 = 未收集, 1 = 已收集(1張), 2 = 可交換(2張以上)
+            let status = 0;
+            if (qty === 1) status = 1;
+            if (qty >= 2) status = 2;
+
+            const card = document.createElement('div');
+            card.className = `card-item status-${status}`;
+            
+            // 非數量模式時，點擊卡牌進行 0 -> 1 -> 2 -> 0 切換
+            card.onclick = (e) => {
+                if (e.target.tagName === 'BUTTON') return; // 避免點擊數量按鈕時觸發
+                if (!isQtyMode) {
+                    if (cardQuantities[index] === 0) cardQuantities[index] = 1;
+                    else if (cardQuantities[index] === 1) cardQuantities[index] = 2;
+                    else cardQuantities[index] = 0;
+                    saveAndRender();
+                }
+            };
+
+            const formattedNum = String(i).padStart(2, '0');
+
+            let statusText = '未收集';
+            if (status === 1) statusText = '✓ 已收集';
+            if (status === 2) statusText = '🔄 可交換';
+
+            let qtyHtml = '';
+            if (isQtyMode) {
+                qtyHtml = `
+                    <div class="qty-control">
+                        <button class="btn-qty" onclick="changeQty(${index}, -1)">-</button>
+                        <span class="qty-display">${qty} 張</span>
+                        <button class="btn-qty" onclick="changeQty(${index}, 1)">+</button>
+                    </div>
+                `;
+            } else if (qty > 1) {
+                // 一般模式下若有多張，顯示小標籤
+                qtyHtml = `<div style="font-size: 0.75rem; color: #2196F3; font-weight: bold;">擁有 ${qty} 張</div>`;
+            }
+
+            card.innerHTML = `
+                <div>
+                    <div class="card-number">No.${formattedNum}</div>
+                    <div class="card-title">皮卡丘</div>
+                </div>
+                <div>
+                    <span class="status-tag">${statusText}</span>
+                    ${qtyHtml}
+                </div>
+            `;
+
+            gridElement.appendChild(card);
+        }
+        updateStats();
+    }
+
+    // 修改特定卡片數量
+    function changeQty(index, delta) {
+        cardQuantities[index] = Math.max(0, cardQuantities[index] + delta);
+        saveAndRender();
+    }
+
+    // 儲存至本地並更新 UI
+    function saveAndRender() {
+        localStorage.setItem('pikachu30th_quantities', JSON.stringify(cardQuantities));
+        initCards();
+    }
+
+    // 更新統計數據
+    function updateStats() {
+        const collectedCount = cardQuantities.filter(q => q > 0).length;
+        const tradableCount = cardQuantities.filter(q => q >= 2).length;
+        const totalQty = cardQuantities.reduce((sum, q) => sum + q, 0);
+        const percentage = Math.round((collectedCount / TOTAL_CARDS) * 100);
+
+        document.getElementById('collected-count').innerText = collectedCount;
+        document.getElementById('tradable-count').innerText = tradableCount;
+        document.getElementById('total-qty-count').innerText = totalQty;
+        document.getElementById('completion-rate').innerText = `${percentage}%`;
+        document.getElementById('progress-bar').style.width = `${percentage}%`;
+    }
+
+    // 複製交換用純文字
+    function copyExchangeText() {
+        const collected = [];
+        const tradable = [];
+        const missing = [];
+
+        cardQuantities.forEach((qty, idx) => {
+            const numStr = String(idx + 1).padStart(2, '0');
+            if (qty === 0) {
+                missing.push(numStr);
+            } else if (qty === 1) {
+                collected.push(numStr);
+            } else {
+                tradable.push(`No.${numStr}(多${qty - 1}張)`);
+            }
+        });
+
+        const totalCollected = collected.length + tradable.length;
+
+        const text = `【皮卡丘 30 周年卡牌交換】\n` +
+            `📊 集卡進度：${totalCollected}/30 (${Math.round((totalCollected/30)*100)}%)\n\n` +
+            `🔄 多出【可交換】：\n${tradable.length > 0 ? tradable.join(', ') : '無'}\n\n` +
+            `❌ 目前【缺少】：\n${missing.length > 0 ? missing.map(n => `No.${n}`).join(', ') : '無（已全套收集！）'}\n\n` +
+            `歡迎私訊交流交換！`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            alert('已成功複製交換文字！您可以直接貼到 LINE 或社群平台上。');
+        }).catch(() => {
+            alert('複製失敗，請手動複製。');
+        });
+    }
+
+    // 匯出成圖片並自動下載
+    function exportAsImage() {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const cols = 6;
+        const rows = 5;
+        const cardWidth = 120;
+        const cardHeight = 85;
+        const gap = 15;
+        const padding = 30;
+        const headerHeight = 120;
+
+        canvas.width = padding * 2 + cols * cardWidth + (cols - 1) * gap;
+        canvas.height = padding * 2 + headerHeight + rows * cardHeight + (rows - 1) * gap;
+
+        // 背景
+        ctx.fillStyle = '#F8F9FA';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 頂部標題背景
+        ctx.fillStyle = '#FFDE00';
+        ctx.fillRect(0, 0, canvas.width, 100);
+
+        // 標題文字
+        ctx.fillStyle = '#212529';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚡ 皮卡丘 30 周年卡牌收集清單', canvas.width / 2, 45);
+
+        // 進度數據
+        const collectedCount = cardQuantities.filter(q => q > 0).length;
+        const tradableCount = cardQuantities.filter(q => q >= 2).length;
+        const totalQty = cardQuantities.reduce((sum, q) => sum + q, 0);
+        const percentage = Math.round((collectedCount / TOTAL_CARDS) * 100);
+
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillStyle = '#444444';
+        ctx.fillText(`進度: ${collectedCount}/30 (${percentage}%) | 可交換: ${tradableCount}種 | 總卡數: ${totalQty}張`, canvas.width / 2, 75);
+
+        // 繪製 30 張卡牌
+        for (let i = 0; i < TOTAL_CARDS; i++) {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+
+            const x = padding + col * (cardWidth + gap);
+            const y = padding + headerHeight + row * (cardHeight + gap);
+
+            const qty = cardQuantities[i];
+
+            let bgColor = '#FFFFFF';
+            let borderColor = '#E0E0E0';
+            let tagBgColor = '#E0E0E0';
+            let tagTextColor = '#666666';
+            let statusText = '未收集';
+
+            if (qty === 1) {
+                bgColor = '#FFFDE7';
+                borderColor = '#FFC107';
+                tagBgColor = '#4CAF50';
+                tagTextColor = '#FFFFFF';
+                statusText = '✓ 已收集';
+            } else if (qty >= 2) {
+                bgColor = '#E3F2FD';
+                borderColor = '#2196F3';
+                tagBgColor = '#2196F3';
+                tagTextColor = '#FFFFFF';
+                statusText = `🔄 剩 ${qty-1} 張可換`;
+            }
+
+            // 繪製卡牌邊框與背景
+            ctx.fillStyle = bgColor;
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(x, y, cardWidth, cardHeight, 8);
+            ctx.fill();
+            ctx.stroke();
+
+            // 卡牌編號
+            ctx.fillStyle = '#666666';
+            ctx.font = '12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`No.${String(i + 1).padStart(2, '0')}`, x + cardWidth / 2, y + 25);
+
+            // 狀態標籤背景
+            ctx.fillStyle = tagBgColor;
+            ctx.beginPath();
+            ctx.roundRect(x + 10, y + 40, cardWidth - 20, 24, 12);
+            ctx.fill();
+
+            // 狀態標籤文字
+            ctx.fillStyle = tagTextColor;
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText(statusText, x + cardWidth / 2, y + 56);
+        }
+
+        // 下載 PNG 圖片
+        const link = document.createElement('a');
+        link.download = `皮卡丘30周年交換清單_已集${collectedCount}張.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    // 重置記錄
+    function resetCollection() {
+        if (confirm('確定要清空目前的收集記錄與數量嗎？')) {
+            cardQuantities = Array(TOTAL_CARDS).fill(0);
+            localStorage.removeItem('pikachu30th_quantities');
+            initCards();
+        }
+    }
+
+    initCards();
+</script>
+
+</body>
+</html>
