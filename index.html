@@ -196,13 +196,23 @@
             color: #333;
         }
 
-        /* 未收集 (0張) */
+        /* 負數: 需求 (紫色) */
+        .card-item.status-needed {
+            border-color: #E1BEE7;
+            background-color: #F3E5F5;
+        }
+        .card-item.status-needed .status-tag {
+            background-color: #9C27B0;
+            color: white;
+        }
+
+        /* 0: 未收集 */
         .card-item.status-0 {
             border-color: #E0E0E0;
             background-color: #FFFFFF;
         }
 
-        /* 已收集 (1張 - 綠色) */
+        /* 1: 已收集 (綠色) */
         .card-item.status-1 {
             border-color: #FFC107;
             background-color: #FFFDE7;
@@ -212,7 +222,7 @@
             color: white;
         }
 
-        /* 可交換 (2張以上 - 藍色) */
+        /* 2+: 可交換 (藍色) */
         .card-item.status-2 {
             border-color: #2196F3;
             background-color: #E3F2FD;
@@ -228,13 +238,13 @@
 <div class="container">
     <header>
         <h1>⚡ 皮卡丘 30 周年卡牌清點與交換</h1>
-        <p style="margin:0; color: #555;">點擊卡牌切換狀態，或開啟「數量模式」記錄持有張數</p>
+        <p style="margin:0; color: #555;">點擊卡牌切換狀態，或開啟「數量模式」記錄持有/需求張數</p>
     </header>
 
     <div class="stats-bar">
         <div>已收集: <span id="collected-count" style="color: #4CAF50;">0</span> / 30</div>
-        <div>可交換: <span id="tradable-count" style="color: #2196F3;">0</span> 張</div>
-        <div>總持有: <span id="total-qty-count" style="color: #9C27B0;">0</span> 張</div>
+        <div>可交換: <span id="tradable-count" style="color: #2196F3;">0</span> 種</div>
+        <div>需求中: <span id="needed-count" style="color: #9C27B0;">0</span> 張</div>
         <div>達成率: <span id="completion-rate">0%</span></div>
     </div>
     
@@ -258,7 +268,7 @@
 
 <script>
     const TOTAL_CARDS = 30;
-    // 儲存每張卡牌的數量 (數量 0 = 未收集, 1 = 已收集, 2+ = 可交換)
+    // 儲存每張卡牌的數量 (負數 = 需求, 0 = 未收集, 1 = 已收集, 2+ = 可交換)
     let cardQuantities = JSON.parse(localStorage.getItem('pikachu30th_quantities')) || Array(TOTAL_CARDS).fill(0);
     let isQtyMode = false;
 
@@ -280,17 +290,18 @@
             const index = i - 1;
             const qty = cardQuantities[index];
             
-            // 計算狀態分類: 0 = 未收集, 1 = 已收集(1張), 2 = 可交換(2張以上)
-            let status = 0;
-            if (qty === 1) status = 1;
-            if (qty >= 2) status = 2;
+            // 計算狀態分類
+            let statusClass = 'status-0';
+            if (qty < 0) statusClass = 'status-needed';
+            else if (qty === 1) statusClass = 'status-1';
+            else if (qty >= 2) statusClass = 'status-2';
 
             const card = document.createElement('div');
-            card.className = `card-item status-${status}`;
+            card.className = `card-item ${statusClass}`;
             
-            // 非數量模式時，點擊卡牌進行 0 -> 1 -> 2 -> 0 切換
+            // 非數量模式時點擊進行 0 -> 1 -> 2 -> 0 循環切換
             card.onclick = (e) => {
-                if (e.target.tagName === 'BUTTON') return; // 避免點擊數量按鈕時觸發
+                if (e.target.tagName === 'BUTTON') return;
                 if (!isQtyMode) {
                     if (cardQuantities[index] === 0) cardQuantities[index] = 1;
                     else if (cardQuantities[index] === 1) cardQuantities[index] = 2;
@@ -302,8 +313,9 @@
             const formattedNum = String(i).padStart(2, '0');
 
             let statusText = '未收集';
-            if (status === 1) statusText = '✓ 已收集';
-            if (status === 2) statusText = '🔄 可交換';
+            if (qty < 0) statusText = `需求 ${Math.abs(qty)} 張`;
+            else if (qty === 1) statusText = '✓ 已收集';
+            else if (qty >= 2) statusText = '🔄 可交換';
 
             let qtyHtml = '';
             if (isQtyMode) {
@@ -314,9 +326,10 @@
                         <button class="btn-qty" onclick="changeQty(${index}, 1)">+</button>
                     </div>
                 `;
-            } else if (qty > 1) {
-                // 一般模式下若有多張，顯示小標籤
-                qtyHtml = `<div style="font-size: 0.75rem; color: #2196F3; font-weight: bold;">擁有 ${qty} 張</div>`;
+            } else if (qty !== 0 && qty !== 1) {
+                const label = qty < 0 ? `需求 ${Math.abs(qty)} 張` : `擁有 ${qty} 張`;
+                const color = qty < 0 ? '#9C27B0' : '#2196F3';
+                qtyHtml = `<div style="font-size: 0.75rem; color: ${color}; font-weight: bold;">${label}</div>`;
             }
 
             card.innerHTML = `
@@ -335,9 +348,9 @@
         updateStats();
     }
 
-    // 修改特定卡片數量
+    // 修改特定卡片數量（不設下限，允許點成負數）
     function changeQty(index, delta) {
-        cardQuantities[index] = Math.max(0, cardQuantities[index] + delta);
+        cardQuantities[index] += delta;
         saveAndRender();
     }
 
@@ -351,12 +364,13 @@
     function updateStats() {
         const collectedCount = cardQuantities.filter(q => q > 0).length;
         const tradableCount = cardQuantities.filter(q => q >= 2).length;
-        const totalQty = cardQuantities.reduce((sum, q) => sum + q, 0);
+        // 計算所有負數的總需求張數
+        const neededTotal = cardQuantities.filter(q => q < 0).reduce((sum, q) => sum + Math.abs(q), 0);
         const percentage = Math.round((collectedCount / TOTAL_CARDS) * 100);
 
         document.getElementById('collected-count').innerText = collectedCount;
         document.getElementById('tradable-count').innerText = tradableCount;
-        document.getElementById('total-qty-count').innerText = totalQty;
+        document.getElementById('needed-count').innerText = neededTotal;
         document.getElementById('completion-rate').innerText = `${percentage}%`;
         document.getElementById('progress-bar').style.width = `${percentage}%`;
     }
@@ -369,8 +383,10 @@
 
         cardQuantities.forEach((qty, idx) => {
             const numStr = String(idx + 1).padStart(2, '0');
-            if (qty === 0) {
-                missing.push(numStr);
+            if (qty < 0) {
+                missing.push(`No.${numStr}(需${Math.abs(qty)}張)`);
+            } else if (qty === 0) {
+                missing.push(`No.${numStr}`);
             } else if (qty === 1) {
                 collected.push(numStr);
             } else {
@@ -383,7 +399,7 @@
         const text = `【皮卡丘 30 周年卡牌交換】\n` +
             `📊 集卡進度：${totalCollected}/30 (${Math.round((totalCollected/30)*100)}%)\n\n` +
             `🔄 多出【可交換】：\n${tradable.length > 0 ? tradable.join(', ') : '無'}\n\n` +
-            `❌ 目前【缺少】：\n${missing.length > 0 ? missing.map(n => `No.${n}`).join(', ') : '無（已全套收集！）'}\n\n` +
+            `❓ 目前【需求/缺少】：\n${missing.length > 0 ? missing.join(', ') : '無（已全套收集！）'}\n\n` +
             `歡迎私訊交流交換！`;
 
         navigator.clipboard.writeText(text).then(() => {
@@ -426,12 +442,12 @@
         // 進度數據
         const collectedCount = cardQuantities.filter(q => q > 0).length;
         const tradableCount = cardQuantities.filter(q => q >= 2).length;
-        const totalQty = cardQuantities.reduce((sum, q) => sum + q, 0);
+        const neededTotal = cardQuantities.filter(q => q < 0).reduce((sum, q) => sum + Math.abs(q), 0);
         const percentage = Math.round((collectedCount / TOTAL_CARDS) * 100);
 
         ctx.font = 'bold 14px sans-serif';
         ctx.fillStyle = '#444444';
-        ctx.fillText(`進度: ${collectedCount}/30 (${percentage}%) | 可交換: ${tradableCount}種 | 總卡數: ${totalQty}張`, canvas.width / 2, 75);
+        ctx.fillText(`進度: ${collectedCount}/30 (${percentage}%) | 可交換: ${tradableCount}種 | 需求: ${neededTotal}張`, canvas.width / 2, 75);
 
         // 繪製 30 張卡牌
         for (let i = 0; i < TOTAL_CARDS; i++) {
@@ -449,7 +465,13 @@
             let tagTextColor = '#666666';
             let statusText = '未收集';
 
-            if (qty === 1) {
+            if (qty < 0) {
+                bgColor = '#F3E5F5';
+                borderColor = '#E1BEE7';
+                tagBgColor = '#9C27B0';
+                tagTextColor = '#FFFFFF';
+                statusText = `需 ${Math.abs(qty)} 張`;
+            } else if (qty === 1) {
                 bgColor = '#FFFDE7';
                 borderColor = '#FFC107';
                 tagBgColor = '#4CAF50';
